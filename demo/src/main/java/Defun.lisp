@@ -1,0 +1,5 @@
+(defun funcion-compleja (a b)
+  (let ((resultado (* a b)))
+    (if (> resultado 10)
+        (- resultado 5)
+        (+ resultado 2))))
