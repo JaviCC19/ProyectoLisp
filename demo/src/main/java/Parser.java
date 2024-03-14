@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 
 public class Parser {
@@ -15,21 +16,24 @@ public class Parser {
         }
     }
 
-    private void parseExpression() {
+    private List<String> parseExpression() {
+        List<String> expressionTokens = new ArrayList<>();
+        
         String token = tokens.get(currentTokenIndex);
         currentTokenIndex++;
 
-        // Casos base
         if (token.equals("(")) {
             // Inicio de una expresión
-            parseExpression();
-        } else if (token.equals(")")) {
-            // Fin de una expresión
-            return;
-        } else {
-            // Manejar otros tokens (por ejemplo, identificadores, constantes, etc.)
-            // Seguir agregando logica
-            System.out.println("Token encontrado: " + token);
+            while (!tokens.get(currentTokenIndex).equals(")")) {
+                expressionTokens.addAll(parseExpression());
+            }
+            currentTokenIndex++; // Saltar el paréntesis de cierre ")"
+        } else if (!token.equals(")")) {
+            // No es un paréntesis de cierre
+            expressionTokens.add(token);
         }
+        
+        return expressionTokens;
     }
 }
+
