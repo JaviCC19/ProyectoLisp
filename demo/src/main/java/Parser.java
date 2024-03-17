@@ -1,39 +1,44 @@
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 public class Parser {
-    private List<String> tokens;
-    private int currentTokenIndex;
+    private List<Object> tokens;
+    private int currentPosition;
 
-    public Parser(List<String> tokens) {
+    public Parser(List<Object> tokens) {
         this.tokens = tokens;
-        this.currentTokenIndex = 0;
+        this.currentPosition = 0;
     }
 
-    public void parse() {
-        while (currentTokenIndex < tokens.size()) {
-            parseExpression();
+    public Node parse() {
+        return parseExpression();
+    }
+
+    private Node parseExpression() {
+        if (currentPosition >= tokens.size()) {
+            return null;
         }
-    }
-
-    private List<String> parseExpression() {
-        List<String> expressionTokens = new ArrayList<>();
         
-        String token = tokens.get(currentTokenIndex);
-        currentTokenIndex++;
-
-        if (token.equals("(")) {
-            // Inicio de una expresión
-            while (!tokens.get(currentTokenIndex).equals(")")) {
-                expressionTokens.addAll(parseExpression());
+        Object token = tokens.get(currentPosition);
+        currentPosition++;
+        
+        if ("(".equals(token)) {
+            List<Node> children = new ArrayList<>();
+            while (!")".equals(tokens.get(currentPosition))) {
+                Node child = parseExpression();
+                if (child != null) {
+                    children.add(child);
+                }
             }
-            currentTokenIndex++; // Saltar el paréntesis de cierre ")"
-        } else if (!token.equals(")")) {
-            // No es un paréntesis de cierre
-            expressionTokens.add(token);
+            currentPosition++; // consume ")"
+            return new ListNode(children);
+        } else if (token instanceof String) {
+            return new AtomNode(token); // Si el token es una cadena, lo tratamos como un átomo
+        } else if (token instanceof Double || token instanceof Integer) {
+            return new AtomNode(token); // Si el token es un número, lo tratamos como un átomo
+        } else {
+            // Manejar otros tipos de token o errores
+            return null;
         }
-        
-        return expressionTokens;
     }
 }
-
