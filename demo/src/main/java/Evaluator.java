@@ -2,7 +2,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Evaluator {
 
@@ -131,30 +133,24 @@ public class Evaluator {
                 else if (operator.equals("equal") || operator.equals("=")) {
                     // Verificar si la expresión contiene al menos dos elementos
                     if (children.size() >= 3) {
-                        Node firstNode;
-                        Node secondNode;
+                        Object firstNode;
+                        Object secondNode;
                         // Verificar si el tamaño de la expresión es igual a 3 o mayor
                         if (children.size() == 3) {
                             // Si es igual a 3, las posiciones 1 y 2 son los elementos a comparar
-                            firstNode = children.get(1);
-                            secondNode = children.get(2);
+                            firstNode = evaluate(children.get(1));
+                            secondNode = evaluate(children.get(2));
                         } else if (children.size() > 3) {
-                            firstNode = children.get(2);
-                            secondNode = children.get(4);
+                            firstNode = evaluate(children.get(2));
+                            secondNode = evaluate(children.get(4));
                         } else {
                             // Manejar error: cantidad incorrecta de argumentos
                             return null;
                         }
                         
-                        String primeraEntrada = nodeToString(firstNode);
-                        String segundaEntrada = nodeToString(secondNode);
-                        if(primeraEntrada.equals(segundaEntrada)){
-                            return true;
-                        } else{
-                            return false;
-                        }
-
-
+                        // Verificar si los nodos evaluados son iguales
+                        boolean sonIguales = deepEquals(firstNode, secondNode);
+                        return sonIguales;
                     } else {
                         // Manejar error: cantidad incorrecta de argumentos
                         return null;
@@ -162,26 +158,70 @@ public class Evaluator {
                 }
 
                 else if (operator.equals("<")){
-                    Double primerValor = nodeToDouble(children.get(1));
-                    Double segundoValor = nodeToDouble(children.get(2));
-                    if(primerValor < segundoValor){
-                        return true;
-                    } else{
-                        return false;
+                    Object firstNode;
+                    Object secondNode;
+                    // Verificar si la expresión contiene al menos dos elementos
+                    if (children.size() >= 3) {
+                        // Obtener los valores correspondientes a los nodos a comparar
+                        if (children.size() == 3) {
+                            // Si es igual a 3, las posiciones 1 y 2 son los elementos a comparar
+                            firstNode = evaluate(children.get(1));
+                            secondNode = evaluate(children.get(2));
+                        } else if (children.size() > 3) {
+                            firstNode = evaluate(children.get(2));
+                            secondNode = evaluate(children.get(4));
+                        } else {
+                            // Manejar error: cantidad incorrecta de argumentos
+                            return null;
+                        }
+                        
+                        // Verificar si los nodos evaluados son números y realizar la comparación
+                        if (firstNode instanceof Number && secondNode instanceof Number) {
+                            Double primerValor = ((Number) firstNode).doubleValue();
+                            Double segundoValor = ((Number) secondNode).doubleValue();
+                            return primerValor < segundoValor;
+                        } else {
+                            // Manejar error: los nodos no son números
+                            return null;
+                        }
+                    } else {
+                        // Manejar error: cantidad incorrecta de argumentos
+                        return null;
                     }
                 }
 
                 else if (operator.equals(">")) {
-                    Double primerValor = nodeToDouble(children.get(1));
-                    Double segundoValor = nodeToDouble(children.get(2));
-                    if (primerValor > segundoValor) {
-                        return true;
+                    Object firstNode;
+                    Object secondNode;
+                    // Verificar si la expresión contiene al menos dos elementos
+                    if (children.size() >= 3) {
+                        // Obtener los valores correspondientes a los nodos a comparar
+                        if (children.size() == 3) {
+                            // Si es igual a 3, las posiciones 1 y 2 son los elementos a comparar
+                            firstNode = evaluate(children.get(1));
+                            secondNode = evaluate(children.get(2));
+                        } else if (children.size() > 3) {
+                            firstNode = evaluate(children.get(2));
+                            secondNode = evaluate(children.get(4));
+                        } else {
+                            // Manejar error: cantidad incorrecta de argumentos
+                            return null;
+                        }
+                        
+                        // Verificar si los nodos evaluados son números y realizar la comparación
+                        if (firstNode instanceof Number && secondNode instanceof Number) {
+                            Double primerValor = ((Number) firstNode).doubleValue();
+                            Double segundoValor = ((Number) secondNode).doubleValue();
+                            return primerValor > segundoValor;
+                        } else {
+                            // Manejar error: los nodos no son números
+                            return null;
+                        }
                     } else {
-                        return false;
+                        // Manejar error: cantidad incorrecta de argumentos
+                        return null;
                     }
                 }
-                
-           
 
                 else if (operator.equals("cond")) {
                     for (int i = 1; i < children.size(); i++) {
@@ -202,6 +242,9 @@ public class Evaluator {
                     // Si ninguna cláusula se evalúa como verdadera, devolver la frase "murio el cond"
                     return "Niguna se cumplio";
                 }
+                
+                
+                
 
                 else if (operator.equals("quote") || operator.equals("'")) {
                     if (children.size() > 1) {
