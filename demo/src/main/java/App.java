@@ -84,7 +84,7 @@ public class App {
         testExpression(evaluator, condExpression1, 1);
 
         // Expresión condicional con una cláusula que evalúa si x es igual a 10.
-        String condExpression2 = "(cond ((> 10 10) (setq x 1)) ((equal 10 10) (+ x 2)))";
+        String condExpression2 = "(cond ((> 10 10) (setq x 1)) ((= 10 10) (+ x 2)))";
         testExpression(evaluator, condExpression2, 3);
 
 

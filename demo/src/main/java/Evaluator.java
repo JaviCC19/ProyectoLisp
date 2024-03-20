@@ -128,7 +128,7 @@ public class Evaluator {
                     }
                 }
                 
-                else if (operator.equals("equal")) {
+                else if (operator.equals("equal") || operator.equals("=")) {
                     // Verificar si la expresión contiene al menos dos elementos
                     if (children.size() >= 3) {
                         Node firstNode;
@@ -181,15 +181,7 @@ public class Evaluator {
                     }
                 }
                 
-                else if (operator.equals("=")){
-                    Double primerValor = nodeToDouble(children.get(1));
-                    Double segundoValor = nodeToDouble(children.get(2));
-                    if(primerValor == segundoValor){
-                        return true;
-                    } else{
-                        return false;
-                    }
-                }
+           
 
                 else if (operator.equals("cond")) {
                     for (int i = 1; i < children.size(); i++) {
