@@ -75,6 +75,18 @@ public class App {
 
         String prueba15 = "(> 2 10)";
         testExpression(evaluator, prueba15, prueba10);
+        // Asignar el valor 15 a x antes de realizar las pruebas
+        String setXExpression = "(setq x 15)";
+        testExpression(evaluator, setXExpression, 15);
+
+        // Expresión condicional con una cláusula que evalúa si x es mayor que 10.
+        String condExpression1 = "(cond ((> 15 10) (setq x 1)) ((= 15 10) (setq x 2)))";
+        testExpression(evaluator, condExpression1, 1);
+
+        // Expresión condicional con una cláusula que evalúa si x es igual a 10.
+        String condExpression2 = "(cond ((> 10 10) (setq x 1)) ((equal 10 10) (+ x 2)))";
+        testExpression(evaluator, condExpression2, 3);
+
 
 
     }

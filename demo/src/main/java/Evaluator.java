@@ -171,10 +171,20 @@ public class Evaluator {
                     }
                 }
 
-                else if (operator.equals(">")){
+                else if (operator.equals(">")) {
                     Double primerValor = nodeToDouble(children.get(1));
                     Double segundoValor = nodeToDouble(children.get(2));
-                    if(primerValor > segundoValor){
+                    if (primerValor > segundoValor) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+                
+                else if (operator.equals("=")){
+                    Double primerValor = nodeToDouble(children.get(1));
+                    Double segundoValor = nodeToDouble(children.get(2));
+                    if(primerValor == segundoValor){
                         return true;
                     } else{
                         return false;
@@ -197,10 +207,9 @@ public class Evaluator {
                             }
                         }
                     }
-                    // Si ninguna cláusula se evalúa como verdadera, devolver null o lo que necesitemos
-                    return null;
+                    // Si ninguna cláusula se evalúa como verdadera, devolver la frase "murio el cond"
+                    return "Niguna se cumplio";
                 }
-                
 
                 else if (operator.equals("quote") || operator.equals("'")) {
                     if (children.size() > 1) {
