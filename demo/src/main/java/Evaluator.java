@@ -2,9 +2,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 public class Evaluator {
 
@@ -183,11 +181,25 @@ public class Evaluator {
                     }
                 }
 
-                else if (operator.equals("cond")) {          
-                      
+                else if (operator.equals("cond")) {
+                    for (int i = 1; i < children.size(); i++) {
+                        Node clause = children.get(i);
+                        if (clause instanceof ListNode) {
+                            ListNode condClause = (ListNode) clause;
+                            List<Node> clauseChildren = condClause.getChildren();
+                            if (clauseChildren.size() >= 2) {
+                                Node condition = clauseChildren.get(0);
+                                Node expression = clauseChildren.get(1);
+                                Object result = evaluate(condition);
+                                if (result != null && result instanceof Boolean && ((Boolean) result)) {
+                                    return evaluate(expression);
+                                }
+                            }
+                        }
+                    }
+                    // Si ninguna cláusula se evalúa como verdadera, devolver null o lo que necesitemos
+                    return null;
                 }
-                
-                
                 
 
                 else if (operator.equals("quote") || operator.equals("'")) {
