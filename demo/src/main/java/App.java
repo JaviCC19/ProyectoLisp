@@ -76,17 +76,28 @@ public class App {
         String prueba15 = "(> 2 10)";
         testExpression(evaluator, prueba15, prueba10);
         // Asignar el valor 15 a x antes de realizar las pruebas
+
         String setXExpression = "(setq x 15)";
         testExpression(evaluator, setXExpression, 15);
 
+        String prueba101 = "(> x 10)";
+        testExpression(evaluator, prueba101, prueba101);
+
         // Expresión condicional con una cláusula que evalúa si x es mayor que 10.
-        String condExpression1 = "(cond ((> 15 10) (setq x 1)) ((= 15 10) (setq x 2)))";
+        String condExpression1 = "(cond ((> x 10) (setq x 1)) ((= x 10) (setq x 2)))";
         testExpression(evaluator, condExpression1, 1);
 
-        // Expresión condicional con una cláusula que evalúa si x es igual a 10.
-        String condExpression2 = "(cond ((> 10 10) (setq x 1)) ((= 10 10) (+ x 2)))";
-        testExpression(evaluator, condExpression2, 3);
+        String metodoSUma = "(defun sumar(a b) (+ a b))";
+        testExpression(evaluator, metodoSUma, metodoSUma);
 
+        String prueba01010 = "(sumar (2 3))";
+        testExpression(evaluator, prueba01010, prueba01010);
+
+        String factorialMethodInLisp = "(defun factorial (n) (cond ((<= n 1) 1) (t (* n (factorial (- n 1))))))";
+        testExpression(evaluator, factorialMethodInLisp, factorialMethodInLisp);
+
+        String pruebaLLORAR = "(factorial (5))";
+        testExpression(evaluator, pruebaLLORAR, pruebaLLORAR);
 
 
     }
