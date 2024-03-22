@@ -2,9 +2,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 public class Evaluator {
 
@@ -28,10 +26,11 @@ public class Evaluator {
                 // Si no es un String, se devuelve el valor tal cual
                 return value;
             }
+
         } else if (node instanceof ListNode) {
             ListNode listNode = (ListNode) node;
             List<Node> children = listNode.getChildren();
-    
+
             if (children.isEmpty()) {
                 return null;
             } else {
@@ -39,13 +38,14 @@ public class Evaluator {
                 if (!(operatorNode instanceof AtomNode)) {
                     return null;
                 }
-                
+
                 String operator = (String) ((AtomNode) operatorNode).getValue();
 
                 if (operator.equals("defun")) {
                     // Definición de una función
                     if (children.size() != 4 || !(children.get(1) instanceof AtomNode)) {
                         // Error de sintaxis en la definición de la función
+                        System.out.println("No pasa esto");
                         return null;
                     }
                     String functionName = (String) ((AtomNode) children.get(1)).getValue();
@@ -67,48 +67,32 @@ public class Evaluator {
 
                 else if (functionDefinitions.containsKey(operator)) {
                     // Llamada a una función definida
-                    ListNode functionBody = functionDefinitions.get(operator);
+                    String functionBody = stringify(functionDefinitions.get(operator));
                     List<String> functionParametersList = functionParameters.get(operator);
-                    
-                    // Crear un mapa de enlaces de argumentos
-                    Map<String, Object> argumentBindings = new HashMap<>();
-                    
-                    // Verificar si la cantidad de argumentos coincide con la cantidad de parámetros
-                    if (children.size() - 1 != functionParametersList.size()) {
-                        // Manejar error: Cantidad incorrecta de argumentos
-                        return null;
-                    }
-                    
-                    // Asignar los valores de los argumentos a los parámetros de la función
-                    for (int i = 0; i < functionParametersList.size(); i++) {
-                        String parameterName = functionParametersList.get(i);
-                        Node argumentNode = children.get(i + 1); // +1 para omitir el operador de la llamada
-                        Object argumentValue = evaluate(argumentNode);
-                        argumentBindings.put(parameterName, argumentValue);
-                        
-                    }
-                
-                    ListNode metodoEjecutable = substituteParameters(functionBody, argumentBindings);
-                    String lispConParametros = stringify(metodoEjecutable);
-                
+               
+                    String inputFunction = nodeToString(children.get(1));
+                    ArrayList<Object> parametrosAEntrar = parseStringToList(inputFunction);
+
+                    String inputEvaluar = reemplazar(functionBody, functionParametersList, parametrosAEntrar);
+
                     // Aquí se analiza y evalúa nuevamente la expresión Lisp
-                    Lexer lexer = new Lexer(lispConParametros);
+                    Lexer lexer = new Lexer(inputEvaluar);
                     List<Object> tokens = lexer.tokenize();
                     Parser parser = new Parser(tokens);
                     Node rootNode = parser.parse();
                     Evaluator evaluator = new Evaluator();
                     Object result2 = evaluator.evaluate(rootNode);
-                
+
                     // Retornar el resultado de la evaluación de la nueva expresión Lisp
                     return result2;
                 }
-                
+
                 else if (operator.equals("atom")) {
                     // Verificar si el nodo tiene solo un elemento
                     if (children.size() == 2) {
                         Node argumentNode = children.get(1);
                         Object result = evaluate(argumentNode);
-                        
+
                         // Si el resultado es un átomo (es decir, no es una lista), devolver true
                         if (result instanceof ListNode) {
                             return false;
@@ -122,14 +106,14 @@ public class Evaluator {
                     }
                 }
 
-                else if (operator.equals("list")){
-                    if(children.size()>2){
+                else if (operator.equals("list")) {
+                    if (children.size() > 2) {
                         return true;
-                    } else{
+                    } else {
                         return false;
                     }
                 }
-                
+
                 else if (operator.equals("equal") || operator.equals("=")) {
                     // Verificar si la expresión contiene al menos dos elementos
                     if (children.size() >= 3) {
@@ -147,7 +131,7 @@ public class Evaluator {
                             // Manejar error: cantidad incorrecta de argumentos
                             return null;
                         }
-                        
+
                         // Verificar si los nodos evaluados son iguales
                         boolean sonIguales = deepEquals(firstNode, secondNode);
                         return sonIguales;
@@ -157,7 +141,7 @@ public class Evaluator {
                     }
                 }
 
-                else if (operator.equals("<")){
+                else if (operator.equals("<")) {
                     Object firstNode;
                     Object secondNode;
                     // Verificar si la expresión contiene al menos dos elementos
@@ -174,7 +158,7 @@ public class Evaluator {
                             // Manejar error: cantidad incorrecta de argumentos
                             return null;
                         }
-                        
+
                         // Verificar si los nodos evaluados son números y realizar la comparación
                         if (firstNode instanceof Number && secondNode instanceof Number) {
                             Double primerValor = ((Number) firstNode).doubleValue();
@@ -207,7 +191,7 @@ public class Evaluator {
                             // Manejar error: cantidad incorrecta de argumentos
                             return null;
                         }
-                        
+
                         // Verificar si los nodos evaluados son números y realizar la comparación
                         if (firstNode instanceof Number && secondNode instanceof Number) {
                             Double primerValor = ((Number) firstNode).doubleValue();
@@ -242,9 +226,6 @@ public class Evaluator {
                     // Si ninguna cláusula se evalúa como verdadera, devolver la frase "murio el cond"
                     return "Niguna se cumplio";
                 }
-                
-                
-                
 
                 else if (operator.equals("quote") || operator.equals("'")) {
                     if (children.size() > 1) {
@@ -261,14 +242,53 @@ public class Evaluator {
                     } else {
                         return null;
                     }
-                }
-                else {
+                } else {
                     List<Object> evaluatedOperands = evaluateOperands(children);
                     return performOperation(operator, evaluatedOperands);
                 }
             }
         }
         return null;
+    }
+    
+    public static ArrayList<Object> parseStringToList(String input) {
+        ArrayList<Object> list = new ArrayList<>();
+        StringBuilder currentToken = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (char c : input.toCharArray()) {
+            if (c == '(' || c == ')' || c == ' ') {
+                if (currentToken.length() > 0) {
+                    if (inQuotes) {
+                        list.add(currentToken.toString());
+                    } else {
+                        try {
+                            int intValue = Integer.parseInt(currentToken.toString());
+                            list.add(intValue);
+                        } catch (NumberFormatException e) {
+                            list.add(currentToken.toString());
+                        }
+                    }
+                    currentToken.setLength(0);
+                }
+
+                if (c == '(') {
+                    continue;
+                } else if (c == ')') {
+                    break;
+                } else if (c == ' ') {
+                    continue;
+                }
+            }
+
+            if (c == '\'') {
+                inQuotes = !inQuotes;
+            } else {
+                currentToken.append(c);
+            }
+        }
+
+        return list;
     }
 
     public String nodesToString(List<Node> nodes) {
@@ -293,6 +313,17 @@ public class Evaluator {
             evaluatedOperands.add(operandValue);
         }
         return evaluatedOperands;
+    }
+
+    public static String reemplazar(String texto, List<String> letras, ArrayList<Object> numeros) {
+        StringBuilder resultado = new StringBuilder(texto);
+        for (int i = 0; i < letras.size(); i++) {
+            String letra = letras.get(i);
+            Object numero = numeros.get(i);
+            // Reemplazar la letra por el número en el texto
+            resultado = new StringBuilder(resultado.toString().replace(letra, String.valueOf(numero)));
+        }
+        return resultado.toString();
     }
 
     private String stringify(ListNode functionBody) {
@@ -346,27 +377,27 @@ public class Evaluator {
 }
 
 
-    private ListNode substituteParameters(ListNode functionBody, Map<String, Object> argumentBindings) {
-        List<Node> substitutedNodes = new ArrayList<>();
-        for (Node node : functionBody.getChildren()) {
-            if (node instanceof AtomNode) {
-                String atomValue = (String) ((AtomNode) node).getValue();
-                if (argumentBindings.containsKey(atomValue)) {
-                    // Si el átomo es un parámetro, sustituirlo por su valor correspondiente
-                    Object substitutionValue = argumentBindings.get(atomValue);
-                    substitutedNodes.add(new AtomNode(substitutionValue));
-                } else {
-                    // Si el átomo no es un parámetro, conservarlo sin cambios
-                    substitutedNodes.add(node);
-                }
-            } else if (node instanceof ListNode) {
-                // Si es una lista, recursivamente sustituir los parámetros en su interior
-                ListNode substitutedListNode = substituteParameters((ListNode) node, argumentBindings);
-                substitutedNodes.add(substitutedListNode);
+private ListNode substituteParameters(ListNode functionBody, Map<String, Object> argumentBindings) {
+    List<Node> substitutedNodes = new ArrayList<>();
+    for (Node node : functionBody.getChildren()) {
+        if (node instanceof AtomNode) {
+            String atomValue = (String) ((AtomNode) node).getValue();
+            if (argumentBindings.containsKey(atomValue)) {
+                // Si el átomo es un parámetro, sustituirlo por su valor correspondiente
+                Object substitutionValue = argumentBindings.get(atomValue);
+                substitutedNodes.add(new AtomNode(substitutionValue));
+            } else {
+                // Si el átomo no es un parámetro, conservarlo sin cambios
+                substitutedNodes.add(node);
             }
+        } else if (node instanceof ListNode) {
+            // Si es una lista, recursivamente sustituir los parámetros en su interior
+            ListNode substitutedListNode = substituteParameters((ListNode) node, argumentBindings);
+            substitutedNodes.add(substitutedListNode);
         }
-        return new ListNode(substitutedNodes);
     }
+    return new ListNode(substitutedNodes);
+}
     
 
     private boolean deepEquals(Object obj1, Object obj2) {
