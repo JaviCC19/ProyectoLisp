@@ -5,19 +5,22 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+// Clase que evalúa nodos en una estructura de árbol Lisp
 public class Evaluator {
 
+    // Mapas para almacenar variables, parámetros de función y definiciones de función
     private Map<String, Object> variables = new HashMap<>();
     private Map<String, List<String>> functionParameters = new HashMap<>();
     private Map<String, ListNode> functionDefinitions = new HashMap<>();
 
+    // Constructor por defecto
     public Evaluator() {
         this.variables = new HashMap<>();
         this.functionParameters = new HashMap<>();
         this.functionDefinitions = new HashMap<>();
     }
 
+    // Constructor con parámetros para inicializar los mapas
     public Evaluator(Map<String, Object> variables, Map<String, List<String>> functionParameters,
                      Map<String, ListNode> functionDefinitions) {
         this.variables = new HashMap<>(variables);
@@ -25,6 +28,12 @@ public class Evaluator {
         this.functionDefinitions = new HashMap<>(functionDefinitions);
     }
 
+    
+    /** 
+     * @param node
+     * @return Object
+     */
+    // Método para evaluar un nodo en la estructura del árbol
     public Object evaluate(Node node) {
         if (node instanceof AtomNode) {
             Object value = ((AtomNode) node).getValue();
@@ -42,7 +51,9 @@ public class Evaluator {
                 return value;
             }
 
-        } else if (node instanceof ListNode) {
+        }
+        //Verifica si el nodo es una instancia de una lista
+        else if (node instanceof ListNode) { 
             ListNode listNode = (ListNode) node;
             List<Node> children = listNode.getChildren();
 
@@ -54,14 +65,18 @@ public class Evaluator {
                     return null;
                 }
 
+                //Se extrae el operador, esto para saber qué camino hay que tomar
                 String operator = (String) ((AtomNode) operatorNode).getValue();
 
+
+                //Camino a tomar si se está definiendo una función
                 if (operator.equals("defun")) {
                     // Definición de una función
                     if (children.size() != 4 || !(children.get(1) instanceof AtomNode)) {
                         // Error de sintaxis en la definición de la función
                         return null;
                     }
+                    //Se extrae el nombre de la función y sus parámetros
                     String functionName = (String) ((AtomNode) children.get(1)).getValue();
                     ListNode parametersListNode = (ListNode) children.get(2);
                     List<String> parameters = new ArrayList<>();
@@ -73,29 +88,38 @@ public class Evaluator {
                             return null;
                         }
                     }
+
+                    //Dejamos guardado en un mapa la información de la función
                     functionParameters.put(functionName, parameters);
                     ListNode bodyListNode = (ListNode) children.get(3);
                     functionDefinitions.put(functionName, bodyListNode);
                     return functionName; // Devuelve el nombre de la función como confirmación
                 }
 
+                //Camino a tomar si se encuentra con alguna función ya definida
                 else if (functionDefinitions.containsKey(operator)) {
+                    //Llamamos a toda la información importante
                     Map<String, Object> localVariables = new HashMap<>(variables);
                     Map<String, List<String>> localFunctionParameters = new HashMap<>(functionParameters);
                     Map<String, ListNode> localFunctionDefinitions = new HashMap<>(functionDefinitions);
+
                     // Llamada a una función definida
                     String functionBody = stringify(functionDefinitions.get(operator));
                     List<String> functionParametersList = functionParameters.get(operator);
 
+                    //Se extrae lo que se evaluará
                     String inputFunction = nodeToString(children.get(1));
 
+                    //Extraemos los parametros a usar
                     ArrayList<String> functionParametersEvaluate = extraerDatos(inputFunction);
 
+                    //Se crea un objeto Evaluator con los mapas ya generados para tener recursividad
                     Evaluator recursiveEvaluator = new Evaluator(localVariables, localFunctionParameters,
                             localFunctionDefinitions);
 
                     ArrayList<Object> parametrosAEntrar = new ArrayList<Object>();
 
+                    //Se evalúan los parámetros
                     for (int i = 0; i < functionParametersEvaluate.size(); i++) {
                         Lexer lexer2 = new Lexer(functionParametersEvaluate.get(i));
                         List<Object> tokens2 = lexer2.tokenize();
@@ -104,6 +128,7 @@ public class Evaluator {
                         parametrosAEntrar.add(recursiveEvaluator.evaluate(rootNode));
                     }
 
+                    //Se reemplazan los parametros por los valores dados
                     String inputEvaluar = reemplazar(functionBody, functionParametersList, parametrosAEntrar);
 
                     // Aquí se analiza y evalúa nuevamente la expresión Lisp
@@ -117,6 +142,7 @@ public class Evaluator {
                     return result2;
                 }
 
+                //Verificación de si es un atomo
                 else if (operator.equals("atom")) {
                     // Verificar si el nodo tiene solo un elemento
                     if (children.size() == 2) {
@@ -136,6 +162,7 @@ public class Evaluator {
                     }
                 }
 
+                //Verificación de si algo es una lista
                 else if (operator.equals("list")) {
                     if (children.size() > 2) {
                         return true;
@@ -144,6 +171,7 @@ public class Evaluator {
                     }
                 }
 
+                //Comparación entre atomos y listas
                 else if (operator.equals("equal")) {
                     // Verificar si la expresión contiene al menos dos elementos
                     if (children.size() >= 3) {
@@ -164,12 +192,11 @@ public class Evaluator {
 
                         String primeraEntrada = nodeToString(firstNode);
                         String segundaEntrada = nodeToString(secondNode);
-                        if(primeraEntrada.equals(segundaEntrada)){
+                        if (primeraEntrada.equals(segundaEntrada)) {
                             return true;
-                        } else{
+                        } else {
                             return false;
                         }
-
 
                     } else {
                         // Manejar error: cantidad incorrecta de argumentos
@@ -177,6 +204,7 @@ public class Evaluator {
                     }
                 }
 
+                //Comparación de valores númericos
                 else if (operator.equals("=")) {
                     // Verificar si la expresión contiene al menos dos elementos
                     if (children.size() >= 3) {
@@ -203,43 +231,47 @@ public class Evaluator {
                         return null;
                     }
 
-                } 
+                }
+                
+                //Si se encuentra una variable, se extrae su valor del mapa
                 else if (variables.containsKey(operator)) {
                     return variables.get(operator);
 
-                } else if (operator.equals("<")) {
-                    Object firstNode;
-                    Object secondNode;
-                    // Verificar si la expresión contiene al menos dos elementos
-                    if (children.size() >= 3) {
-                        // Obtener los valores correspondientes a los nodos a comparar
-                        if (children.size() == 3) {
-                            // Si es igual a 3, las posiciones 1 y 2 son los elementos a comparar
-                            firstNode = evaluate(children.get(1));
-                            secondNode = evaluate(children.get(2));
-                        } else if (children.size() > 3) {
-                            firstNode = evaluate(children.get(2));
-                            secondNode = evaluate(children.get(4));
-                        } else {
-                            // Manejar error: cantidad incorrecta de argumentos
-                            return null;
-                        }
-
-                        // Verificar si los nodos evaluados son números y realizar la comparación
-                        if (firstNode instanceof Number && secondNode instanceof Number) {
-                            Double primerValor = ((Number) firstNode).doubleValue();
-                            Double segundoValor = ((Number) secondNode).doubleValue();
-                            return primerValor < segundoValor;
-                        } else {
-                            // Manejar error: los nodos no son números
-                            return null;
-                        }
+                //Se compara dos valores númericos, si el primer es menor al segundo
+            } else if (operator.equals("<")) {
+                Object firstNode;
+                Object secondNode;
+                // Verificar si la expresión contiene al menos dos elementos
+                if (children.size() >= 3) {
+                    // Obtener los valores correspondientes a los nodos a comparar
+                    if (children.size() == 3) {
+                        // Si es igual a 3, las posiciones 1 y 2 son los elementos a comparar
+                        firstNode = evaluate(children.get(1));
+                        secondNode = evaluate(children.get(2));
+                    } else if (children.size() > 3) {
+                        firstNode = evaluate(children.get(2));
+                        secondNode = evaluate(children.get(4));
                     } else {
                         // Manejar error: cantidad incorrecta de argumentos
                         return null;
                     }
-                }
 
+                    // Verificar si los nodos evaluados son números y realizar la comparación
+                    if (firstNode instanceof Number && secondNode instanceof Number) {
+                        Double primerValor = ((Number) firstNode).doubleValue();
+                        Double segundoValor = ((Number) secondNode).doubleValue();
+                        return primerValor < segundoValor;
+                    } else {
+                        // Manejar error: los nodos no son números
+                        return null;
+                    }
+                } else {
+                    // Manejar error: cantidad incorrecta de argumentos
+                    return null;
+                }
+            }
+
+                //Se compara dos valores númericos, si el primer es mayor al segundo
                 else if (operator.equals(">")) {
                     Object firstNode;
                     Object secondNode;
@@ -273,6 +305,7 @@ public class Evaluator {
                     }
                 }
 
+                //Si se encuentra la condiciónal, se evalúan varias condiciones y se vuelve a evaluar lo necesario
                 else if (operator.equals("cond")) {
                     for (int i = 1; i < children.size(); i++) {
                         Node clause = children.get(i);
@@ -295,13 +328,17 @@ public class Evaluator {
                     return "Niguna se cumplio";
                 }
 
+                //Implementación para quote y '
                 else if (operator.equals("quote") || operator.equals("'")) {
                     if (children.size() > 1) {
                         return children.get(1);
                     } else {
                         return null;
                     }
-                } else if (operator.equals("setq")) {
+                }
+
+                //Setear valor de variables 
+                else if (operator.equals("setq")) {
                     if (children.size() == 3 && children.get(1) instanceof AtomNode) {
                         String variableName = (String) ((AtomNode) children.get(1)).getValue();
                         Object value = evaluate(children.get(2));
@@ -310,7 +347,9 @@ public class Evaluator {
                     } else {
                         return null;
                     }
-                } else {
+                }
+                //Si no se ha encontrado nada, se asume que es un signo de operación aritmética
+                else {
                     List<Object> evaluatedOperands = evaluateOperands(children);
                     return performOperation(operator, evaluatedOperands);
                 }
@@ -320,11 +359,26 @@ public class Evaluator {
     }
 
 
+    
+    /** 
+     * @param variables
+     * @param functionParameters
+     * @param Map<String
+     * @param functionDefinitions
+     * @param evaluator
+     */
+    // Método para copiar información de variables, parámetros de función y definiciones de función
     public static void copyInformation(Map<String, Object> variables, Map<String, List<String>> functionParameters,
             Map<String, ListNode> functionDefinitions, Evaluator evaluator) {
             
     }
     
+    
+    /** 
+     * @param input
+     * @return ArrayList<Object>
+     */
+    // Método para convertir una cadena de entrada en una lista de elementos
     public static ArrayList<Object> parseStringToList(String input) {
         ArrayList<Object> list = new ArrayList<>();
         StringBuilder currentToken = new StringBuilder();
@@ -365,6 +419,12 @@ public class Evaluator {
         return list;
     }
 
+    
+    /** 
+     * @param input
+     * @return ArrayList<String>
+     */
+    // Método para extraer datos de una cadena de entrada
     public static ArrayList<String> extraerDatos(String input) {
         String modificadoString = input.substring(1, input.length() - 1);
         ArrayList<String> extractedData = new ArrayList<>();
@@ -387,6 +447,12 @@ public class Evaluator {
         return extractedData;
     }
 
+    
+    /** 
+     * @param nodes
+     * @return String
+     */
+    // Método para convertir una lista de nodos en una cadena de texto  
     public String nodesToString(List<Node> nodes) {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
@@ -402,8 +468,11 @@ public class Evaluator {
     }
 
     
-    
-
+    /** 
+     * @param children
+     * @return List<Object>
+     */
+    // Método privado para evaluar los operandos de una expresión
     private List<Object> evaluateOperands(List<Node> children) {
         List<Object> evaluatedOperands = new ArrayList<>();
         for (int i = 1; i < children.size(); i++) {
@@ -413,6 +482,14 @@ public class Evaluator {
         return evaluatedOperands;
     }
 
+    
+    /** 
+     * @param texto
+     * @param letras
+     * @param numeros
+     * @return String
+     */
+    // Método para reemplazar valores en una cadena de texto
     public static String reemplazar(String texto, List<String> letras, ArrayList<Object> numeros) {
         StringBuilder resultado = new StringBuilder(texto);
         for (int i = 0; i < letras.size(); i++) {
@@ -427,6 +504,12 @@ public class Evaluator {
     }
     
 
+    
+    /** 
+     * @param functionBody
+     * @return String
+     */
+    // Método privado para convertir el cuerpo de una función en una representación de cadena
     private String stringify(ListNode functionBody) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("(");
@@ -442,6 +525,12 @@ public class Evaluator {
         return stringBuilder.toString();
     }
 
+    
+    /** 
+     * @param node
+     * @return Double
+     */
+    // Método privado para convertir un nodo en un valor de tipo Double
     private Double nodeToDouble(Node node) {
         if (node instanceof AtomNode) {
             Object value = ((AtomNode) node).getValue();
@@ -453,6 +542,12 @@ public class Evaluator {
     }
     
     
+    
+    /** 
+     * @param node
+     * @return String
+     */
+    // Método para convertir un nodo en una cadena de texto
     public String nodeToString(Node node) {
     if (node instanceof AtomNode) {
         // Si es un nodo átomo, devolvemos su valor como cadena
@@ -476,31 +571,13 @@ public class Evaluator {
         return "";
     }
 }
-
-
-private ListNode substituteParameters(ListNode functionBody, Map<String, Object> argumentBindings) {
-    List<Node> substitutedNodes = new ArrayList<>();
-    for (Node node : functionBody.getChildren()) {
-        if (node instanceof AtomNode) {
-            String atomValue = (String) ((AtomNode) node).getValue();
-            if (argumentBindings.containsKey(atomValue)) {
-                // Si el átomo es un parámetro, sustituirlo por su valor correspondiente
-                Object substitutionValue = argumentBindings.get(atomValue);
-                substitutedNodes.add(new AtomNode(substitutionValue));
-            } else {
-                // Si el átomo no es un parámetro, conservarlo sin cambios
-                substitutedNodes.add(node);
-            }
-        } else if (node instanceof ListNode) {
-            // Si es una lista, recursivamente sustituir los parámetros en su interior
-            ListNode substitutedListNode = substituteParameters((ListNode) node, argumentBindings);
-            substitutedNodes.add(substitutedListNode);
-        }
-    }
-    return new ListNode(substitutedNodes);
-}
-    
-
+  
+    /** 
+     * @param obj1
+     * @param obj2
+     * @return boolean
+     */
+    // Método privado para verificar la igualdad profunda entre dos objetos
     private boolean deepEquals(Object obj1, Object obj2) {
         if (obj1 == null && obj2 == null) {
             return true;
@@ -526,6 +603,13 @@ private ListNode substituteParameters(ListNode functionBody, Map<String, Object>
     }
     
 
+    
+    /** 
+     * @param operator
+     * @param operands
+     * @return Object
+     */
+    // Método privado para realizar operaciones matemáticas
     private Object performOperation(String operator, List<Object> operands) {
         if (operator.equals("+")) {
             return sum(operands);
@@ -541,6 +625,12 @@ private ListNode substituteParameters(ListNode functionBody, Map<String, Object>
         }
     }
 
+    
+    /** 
+     * @param operands
+     * @return double
+     */
+    // Método privado para sumar una lista de operandos
     private double sum(List<Object> operands) {
         double result = 0;
         for (Object operand : operands) {
@@ -553,6 +643,12 @@ private ListNode substituteParameters(ListNode functionBody, Map<String, Object>
         return result;
     }
 
+    
+    /** 
+     * @param operands
+     * @return double
+     */
+    // Método privado para restar una lista de operandos
     private double subtract(List<Object> operands) {
     if (operands.size() < 2) {
         // Manejar errores, la resta requiere al menos dos operandos
@@ -565,14 +661,26 @@ private ListNode substituteParameters(ListNode functionBody, Map<String, Object>
     return result;
 }
 
-private double multiply(List<Object> operands) {
-    double result = 1;
-    for (Object operand : operands) {
-        result *= ((Number) operand).doubleValue();
-    }
-    return result;
-}
 
+    /** 
+     * @param operands
+     * @return double
+     */
+    // Método privado para multiplicar una lista de operandos
+    private double multiply(List<Object> operands) {
+        double result = 1;
+        for (Object operand : operands) {
+            result *= ((Number) operand).doubleValue();
+        }
+        return result;
+    }
+
+    
+    /** 
+     * @param operands
+     * @return double
+     */
+    // Método privado para dividir una lista de operandos
     private double divide(List<Object> operands) {
         if (operands.size() < 2) {
             // Manejar errores, la división requiere al menos dos operandos
@@ -591,3 +699,4 @@ private double multiply(List<Object> operands) {
     }
     
 }
+
