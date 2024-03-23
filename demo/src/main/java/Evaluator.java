@@ -2,15 +2,31 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class Evaluator {
 
-    private final Map<String, Object> variables = new HashMap<>();
-    private final Map<String, List<String>> functionParameters = new HashMap<>();
-    private final Map<String, ListNode> functionDefinitions = new HashMap<>();
+    private Map<String, Object> variables = new HashMap<>();
+    private Map<String, List<String>> functionParameters = new HashMap<>();
+    private Map<String, ListNode> functionDefinitions = new HashMap<>();
+
+    public Evaluator() {
+        this.variables = new HashMap<>();
+        this.functionParameters = new HashMap<>();
+        this.functionDefinitions = new HashMap<>();
+    }
+
+    public Evaluator(Map<String, Object> variables, Map<String, List<String>> functionParameters,
+                     Map<String, ListNode> functionDefinitions) {
+        this.variables = new HashMap<>(variables);
+        this.functionParameters = new HashMap<>(functionParameters);
+        this.functionDefinitions = new HashMap<>(functionDefinitions);
+    }
 
     public Object evaluate(Node node) {
+        System.out.println("NODO: " + node);
         if (node instanceof AtomNode) {
             Object value = ((AtomNode) node).getValue();
             if (value instanceof String) {
@@ -68,10 +84,29 @@ public class Evaluator {
                 else if (functionDefinitions.containsKey(operator)) {
                     // Llamada a una función definida
                     String functionBody = stringify(functionDefinitions.get(operator));
+                    System.out.println("CON ESTO TRABAJAMOS: " + functionBody);
                     List<String> functionParametersList = functionParameters.get(operator);
-               
+                    System.out.println("PARAMETROS CON LOS QUE TRABAJA: " + functionParametersList);
+
                     String inputFunction = nodeToString(children.get(1));
-                    ArrayList<Object> parametrosAEntrar = parseStringToList(inputFunction);
+                    System.out.println("inputFunction: " + inputFunction);
+
+                    ArrayList<String> functionParametersEvaluate = extraerDatos(inputFunction);
+                    System.out.println("ESTO SACOOOOO: " + functionParametersEvaluate);
+
+                    ArrayList<Object> parametrosAEntrar = new ArrayList<Object>();
+
+                    for (int i = 0; i < functionParametersEvaluate.size(); i++) {
+                        Lexer lexer2 = new Lexer(functionParametersEvaluate.get(i));
+                        System.out.println("ESTO EVALUA: " + functionParametersEvaluate.get(i));
+                        List<Object> tokens2 = lexer2.tokenize();
+                        Parser parser2 = new Parser(tokens2);
+                        Node rootNode = parser2.parse();
+                        Evaluator evaluator = new Evaluator(variables, functionParameters, functionDefinitions);
+                        parametrosAEntrar.add(evaluator.evaluate(rootNode));
+                    }
+
+                    System.out.println("ESTO SACA AHORA PARAMETROSAENTRAR: " + parametrosAEntrar);
 
                     String inputEvaluar = reemplazar(functionBody, functionParametersList, parametrosAEntrar);
 
@@ -80,8 +115,8 @@ public class Evaluator {
                     List<Object> tokens = lexer.tokenize();
                     Parser parser = new Parser(tokens);
                     Node rootNode = parser.parse();
-                    Evaluator evaluator = new Evaluator();
-                    Object result2 = evaluator.evaluate(rootNode);
+                    Evaluator evaluator2 = new Evaluator(variables, functionParameters, functionDefinitions);
+                    Object result2 = evaluator2.evaluate(rootNode);
 
                     // Retornar el resultado de la evaluación de la nueva expresión Lisp
                     return result2;
@@ -139,9 +174,10 @@ public class Evaluator {
                         // Manejar error: cantidad incorrecta de argumentos
                         return null;
                     }
-                }
-
-                else if (operator.equals("<")) {
+                } //CREAR UN CONSTRUCTOR QUE RECIBA TODOS LOS MAPAS, DE ESA FORMA SE MANTIENE LA INFORAMCIÓN IMPORTANTE SIEMPRE
+                else if (variables.containsKey(operator)) {
+                    return variables.get(operator);
+                } else if (operator.equals("<")) {
                     Object firstNode;
                     Object secondNode;
                     // Verificar si la expresión contiene al menos dos elementos
@@ -250,6 +286,12 @@ public class Evaluator {
         }
         return null;
     }
+
+
+    public static void copyInformation(Map<String, Object> variables, Map<String, List<String>> functionParameters,
+            Map<String, ListNode> functionDefinitions, Evaluator evaluator) {
+            
+    }
     
     public static ArrayList<Object> parseStringToList(String input) {
         ArrayList<Object> list = new ArrayList<>();
@@ -291,6 +333,20 @@ public class Evaluator {
         return list;
     }
 
+    public static ArrayList<String> extraerDatos(String input) {
+        String modificadoString = input.substring(1, input.length() - 1);
+        ArrayList<String> extractedData = new ArrayList<>();
+        Pattern pattern = Pattern.compile("\\([^()]*\\)|[^\\s()]+");
+        Matcher matcher = pattern.matcher(modificadoString);
+
+        while (matcher.find()) {
+            String match = matcher.group().trim();
+            extractedData.add(match);
+        }
+
+        return extractedData;
+    }
+
     public String nodesToString(List<Node> nodes) {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
@@ -304,6 +360,8 @@ public class Evaluator {
         sb.append(")");
         return sb.toString();
     }
+
+    
     
 
     private List<Object> evaluateOperands(List<Node> children) {
@@ -320,11 +378,14 @@ public class Evaluator {
         for (int i = 0; i < letras.size(); i++) {
             String letra = letras.get(i);
             Object numero = numeros.get(i);
-            // Reemplazar la letra por el número en el texto
-            resultado = new StringBuilder(resultado.toString().replace(letra, String.valueOf(numero)));
+            // Construir la expresión regular para buscar la letra individualmente
+            String regex = "\\b" + Pattern.quote(letra) + "\\b";
+            // Reemplazar la letra por el número en el texto utilizando la expresión regular
+            resultado = new StringBuilder(resultado.toString().replaceAll(regex, String.valueOf(numero)));
         }
         return resultado.toString();
     }
+    
 
     private String stringify(ListNode functionBody) {
         StringBuilder stringBuilder = new StringBuilder();
