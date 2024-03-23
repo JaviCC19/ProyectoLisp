@@ -174,9 +174,11 @@ public class Evaluator {
                         // Manejar error: cantidad incorrecta de argumentos
                         return null;
                     }
-                } //CREAR UN CONSTRUCTOR QUE RECIBA TODOS LOS MAPAS, DE ESA FORMA SE MANTIENE LA INFORAMCIÓN IMPORTANTE SIEMPRE
+
+                } 
                 else if (variables.containsKey(operator)) {
                     return variables.get(operator);
+
                 } else if (operator.equals("<")) {
                     Object firstNode;
                     Object secondNode;
@@ -248,12 +250,18 @@ public class Evaluator {
                         Node clause = children.get(i);
                         if (clause instanceof ListNode) {
                             ListNode condClause = (ListNode) clause;
+                            System.out.println(condClause);
+                            System.out.println("condición a evaluar: " + condClause);
                             List<Node> clauseChildren = condClause.getChildren();
+                            System.out.println("estas: " + clauseChildren);
                             if (clauseChildren.size() >= 2) {
                                 Node condition = clauseChildren.get(0);
                                 Node expression = clauseChildren.get(1);
                                 Object result = evaluate(condition);
+                                System.out.println("VERDADERO/FALSO: " + result);
                                 if (result != null && result instanceof Boolean && ((Boolean) result)) {
+                                    return evaluate(expression);
+                                } else if (result == null) {
                                     return evaluate(expression);
                                 }
                             }
