@@ -1,25 +1,33 @@
 import java.util.ArrayList;
 import java.util.List;
 
+// Clase para dividir una cadena de entrada en tokens individuales
 public class Lexer {
-    private String input;
-    private int currentPosition;
+    private String input; // Cadena de entrada a tokenizar
+    private int currentPosition; // Posición actual en la cadena de entrada
 
+    // Constructor que inicializa la cadena de entrada y la posición actual
     public Lexer(String input) {
         this.input = input;
         this.currentPosition = 0;
     }
 
+    
+    /** 
+     * @return List<Object>
+     */
+    // Método para tokenizar la cadena de entrada y devolver una lista de tokens
     public List<Object> tokenize() {
-        List<Object> tokens = new ArrayList<>();
+        List<Object> tokens = new ArrayList<>(); // Lista para almacenar los tokens
         while (currentPosition < input.length()) {
             char currentChar = input.charAt(currentPosition);
             if (currentChar == '(' || currentChar == ')') {
-                tokens.add(Character.toString(currentChar));
+                tokens.add(Character.toString(currentChar)); // Agregar paréntesis como tokens individuales
                 currentPosition++;
             } else if (Character.isWhitespace(currentChar)) {
-                currentPosition++;
+                currentPosition++; // Ignorar caracteres de espacio en blanco
             } else if (Character.isDigit(currentChar) || currentChar == '.') {
+                // Si el carácter es un dígito o un punto, construir un token numérico
                 StringBuilder tokenBuilder = new StringBuilder();
                 while (currentPosition < input.length() && (Character.isDigit(input.charAt(currentPosition)) || input.charAt(currentPosition) == '.')) {
                     tokenBuilder.append(input.charAt(currentPosition));
@@ -40,9 +48,9 @@ public class Lexer {
                     tokenBuilder.append(input.charAt(currentPosition));
                     currentPosition++;
                 }
-                tokens.add(tokenBuilder.toString());
+                tokens.add(tokenBuilder.toString()); // Agregar la cadena como un token individual
             }
         }
-        return tokens;
+        return tokens; // Devolver la lista de tokens
     }
 }
