@@ -93,7 +93,7 @@ public class App {
         String prueba01010 = "(sumar (2 3))";
         testExpression(evaluator, prueba01010, prueba01010);
 
-        String factorialMethodInLisp = "(defun factorial (n) (cond ((<= n 1) 1) (t (* n (factorial (- n 1))))))";
+        String factorialMethodInLisp = "(defun factorial (n) (cond ((= n 0.0) 1) (t (* n (factorial (- n 1))))))";
         testExpression(evaluator, factorialMethodInLisp, factorialMethodInLisp);
 
         String pruebaLLORAR = "(factorial (5))";
