@@ -26,7 +26,6 @@ public class Evaluator {
     }
 
     public Object evaluate(Node node) {
-        System.out.println("NODO: " + node);
         if (node instanceof AtomNode) {
             Object value = ((AtomNode) node).getValue();
             if (value instanceof String) {
@@ -61,7 +60,6 @@ public class Evaluator {
                     // Definición de una función
                     if (children.size() != 4 || !(children.get(1) instanceof AtomNode)) {
                         // Error de sintaxis en la definición de la función
-                        System.out.println("No pasa esto");
                         return null;
                     }
                     String functionName = (String) ((AtomNode) children.get(1)).getValue();
@@ -82,31 +80,29 @@ public class Evaluator {
                 }
 
                 else if (functionDefinitions.containsKey(operator)) {
+                    Map<String, Object> localVariables = new HashMap<>(variables);
+                    Map<String, List<String>> localFunctionParameters = new HashMap<>(functionParameters);
+                    Map<String, ListNode> localFunctionDefinitions = new HashMap<>(functionDefinitions);
                     // Llamada a una función definida
                     String functionBody = stringify(functionDefinitions.get(operator));
-                    System.out.println("CON ESTO TRABAJAMOS: " + functionBody);
                     List<String> functionParametersList = functionParameters.get(operator);
-                    System.out.println("PARAMETROS CON LOS QUE TRABAJA: " + functionParametersList);
 
                     String inputFunction = nodeToString(children.get(1));
-                    System.out.println("inputFunction: " + inputFunction);
 
                     ArrayList<String> functionParametersEvaluate = extraerDatos(inputFunction);
-                    System.out.println("ESTO SACOOOOO: " + functionParametersEvaluate);
+
+                    Evaluator recursiveEvaluator = new Evaluator(localVariables, localFunctionParameters,
+                            localFunctionDefinitions);
 
                     ArrayList<Object> parametrosAEntrar = new ArrayList<Object>();
 
                     for (int i = 0; i < functionParametersEvaluate.size(); i++) {
                         Lexer lexer2 = new Lexer(functionParametersEvaluate.get(i));
-                        System.out.println("ESTO EVALUA: " + functionParametersEvaluate.get(i));
                         List<Object> tokens2 = lexer2.tokenize();
                         Parser parser2 = new Parser(tokens2);
                         Node rootNode = parser2.parse();
-                        Evaluator evaluator = new Evaluator(variables, functionParameters, functionDefinitions);
-                        parametrosAEntrar.add(evaluator.evaluate(rootNode));
+                        parametrosAEntrar.add(recursiveEvaluator.evaluate(rootNode));
                     }
-
-                    System.out.println("ESTO SACA AHORA PARAMETROSAENTRAR: " + parametrosAEntrar);
 
                     String inputEvaluar = reemplazar(functionBody, functionParametersList, parametrosAEntrar);
 
@@ -115,8 +111,7 @@ public class Evaluator {
                     List<Object> tokens = lexer.tokenize();
                     Parser parser = new Parser(tokens);
                     Node rootNode = parser.parse();
-                    Evaluator evaluator2 = new Evaluator(variables, functionParameters, functionDefinitions);
-                    Object result2 = evaluator2.evaluate(rootNode);
+                    Object result2 = recursiveEvaluator.evaluate(rootNode);
 
                     // Retornar el resultado de la evaluación de la nueva expresión Lisp
                     return result2;
@@ -149,7 +144,40 @@ public class Evaluator {
                     }
                 }
 
-                else if (operator.equals("equal") || operator.equals("=")) {
+                else if (operator.equals("equal")) {
+                    // Verificar si la expresión contiene al menos dos elementos
+                    if (children.size() >= 3) {
+                        Node firstNode;
+                        Node secondNode;
+                        // Verificar si el tamaño de la expresión es igual a 3 o mayor
+                        if (children.size() == 3) {
+                            // Si es igual a 3, las posiciones 1 y 2 son los elementos a comparar
+                            firstNode = children.get(1);
+                            secondNode = children.get(2);
+                        } else if (children.size() > 3) {
+                            firstNode = children.get(2);
+                            secondNode = children.get(4);
+                        } else {
+                            // Manejar error: cantidad incorrecta de argumentos
+                            return null;
+                        }
+
+                        String primeraEntrada = nodeToString(firstNode);
+                        String segundaEntrada = nodeToString(secondNode);
+                        if(primeraEntrada.equals(segundaEntrada)){
+                            return true;
+                        } else{
+                            return false;
+                        }
+
+
+                    } else {
+                        // Manejar error: cantidad incorrecta de argumentos
+                        return null;
+                    }
+                }
+
+                else if (operator.equals("=")) {
                     // Verificar si la expresión contiene al menos dos elementos
                     if (children.size() >= 3) {
                         Object firstNode;
@@ -250,15 +278,11 @@ public class Evaluator {
                         Node clause = children.get(i);
                         if (clause instanceof ListNode) {
                             ListNode condClause = (ListNode) clause;
-                            System.out.println(condClause);
-                            System.out.println("condición a evaluar: " + condClause);
                             List<Node> clauseChildren = condClause.getChildren();
-                            System.out.println("estas: " + clauseChildren);
                             if (clauseChildren.size() >= 2) {
                                 Node condition = clauseChildren.get(0);
                                 Node expression = clauseChildren.get(1);
                                 Object result = evaluate(condition);
-                                System.out.println("VERDADERO/FALSO: " + result);
                                 if (result != null && result instanceof Boolean && ((Boolean) result)) {
                                     return evaluate(expression);
                                 } else if (result == null) {
@@ -347,11 +371,19 @@ public class Evaluator {
         Pattern pattern = Pattern.compile("\\([^()]*\\)|[^\\s()]+");
         Matcher matcher = pattern.matcher(modificadoString);
 
-        while (matcher.find()) {
-            String match = matcher.group().trim();
-            extractedData.add(match);
+        if(input.charAt(1) == '+' || input.charAt(1) == '-' || input.charAt(1) == '/' || input.charAt(1) == '*'){
+            modificadoString = input;
+            matcher = pattern.matcher(modificadoString);
+            while (matcher.find()) {
+                String match = matcher.group().trim();
+                extractedData.add(match);
+            }  
+        } else{
+            while (matcher.find()) {
+                String match = matcher.group().trim();
+                extractedData.add(match);
+            }
         }
-
         return extractedData;
     }
 
