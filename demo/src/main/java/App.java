@@ -1,110 +1,66 @@
-
-
 import java.util.*;
 
 public class App {
     public static void main(String[] args) {
-        // Crear un nuevo evaluador
+
         Evaluator evaluator = new Evaluator();
+        boolean systemON = true;
+        Scanner sc = new Scanner(System.in);
 
-        // Ejemplo de uso de SETQ: (setq x 10)
-        String setqExpression = "(setq x 10)";
-        testExpression(evaluator, setqExpression, 10);
 
-        // Ejemplo de uso de QUOTE: (quote (+ 2 3))
-        String quoteExpression = "(quote (+ 2 3))";
-        testExpression(evaluator, quoteExpression, "(+ 2 3)");
-
-        // Ejemplo de uso de ': (' (+ 2 3))
-        String quoteSymbolExpression = "(' (+ 2 3))";
-        testExpression(evaluator, quoteSymbolExpression, "(+ 2 3)");
-
-        // Ejemplo de uso de operaciones aritméticas con SETQ: (setq y (* x 5))
-        String setqArithmeticExpression = "(setq y (* x 5))";
-        testExpression(evaluator, setqArithmeticExpression, 50);
-
-        // Ejemplo de uso de operaciones aritméticas con variables: (+ x y)
-        String variableArithmeticExpression = "(+ x y)";
-        testExpression(evaluator, variableArithmeticExpression, 60);
-
-        // Expresión aritmética más compleja para probar
-        String complexArithmeticExpression = "(/ (* (+ x y) (- 20 x)) (+ x y 2))";
-        testExpression(evaluator, complexArithmeticExpression, 1.0416666666666667);
-
-        String prueba1 = "(setq y \"Juan\")";
-        testExpression(evaluator, prueba1, "Juan");
-
-        String prueba2 = "(atom 5)";
-        testExpression(evaluator, prueba2, prueba2);
-
-        String prueba3 = "(atom \"Juan\")";
-        testExpression(evaluator, prueba3, prueba2);
-
-        String prueba4 = "(atom '(a b c))";
-        testExpression(evaluator, prueba4, prueba2);
+        System.out.println("***********************************************************");
+        System.out.println("*  __        _______ _     ____ ___  __  __ _____ _ _ _   *");
+        System.out.println("*  \\ \\      / / ____| |   / ___/ _ \\|  \\/  | ____| | | |  *");
+        System.out.println("*   \\ \\ /\\ / /|  _| | |  | |  | | | | |\\/| |  _| | | | |  *");
+        System.out.println("*    \\ V  V / | |___| |__| |__| |_| | |  | | |___|_|_|_|  *");
+        System.out.println("*     \\_/\\_/  |_____|_____\\____\\___/|_|  |_|_____(_|_|_)  *");
+        System.out.println("***********************************************************");
+        System.out.println();
+        System.out.println("-----------------TE PRESENTAMOS NUESTRO INTERPRETE EN LISP!!!--------------------");
+        System.out.println();
         
-        String prueba5 = "(list \"Juan\")";
-        testExpression(evaluator, prueba5, prueba2);
+        while (systemON) {
+            System.out.println("¿Qué deseas hacer?");
+            System.out.println("------------------------------");
+            System.out.println("1. Ingresar código en LISP");
+            System.out.println("2. Salir del programa");
 
-        String prueba6 = "(list '(a b c))";
-        testExpression(evaluator, prueba6, prueba2);
+            String decisionInicial = sc.nextLine();
+            switch (decisionInicial) {
+                case "1":
+                    System.out.println("--------------------------------------");
+                    System.out.println("Por favor, ingresa el código que quieres que sea evaluado.");
+                    System.out.println("Para que el interprete funcione adecuadamente, tendrás que ingresar línea por línea lo que quieres evaluar.");
+                    System.out.println("Por ejemplo, se espera algo como: (setq x 20) o algo como (* x 10)");
+                    System.out.println("Dicho esto, ¿qué quieres evaluar?");
+                    System.out.println();
 
-        String prueba7 = "(list 'x)";
-        testExpression(evaluator, prueba7, prueba2);
+                    String expression = sc.nextLine();
+                    System.out.println("Gracias!! Ahora probaremos evaluarla :)\n");
 
-        String prueba8 = "(equal '(a b c) '(a b))";
-        testExpression(evaluator, prueba8, prueba8);
+                    Object resultado = testExpression(evaluator, expression);
 
-        String prueba9 = "(equal '(a b c) '(a b c))";
-        testExpression(evaluator, prueba9, prueba8);
+                    System.out.println();
+                    System.out.println("El resultado ha sido: " + resultado);
+                    System.out.println("--------------------------------------\n");
+                    break;
 
-        String prueba10 = "(equal 'a 'a)";
-        testExpression(evaluator, prueba10, prueba10);
+                case "2":
+                    System.out.println("Que tenga un buen día!!!!");
+                    systemON = false;
+                    break;
 
-        String prueba11 = "(equal 'b 'a)";
-        testExpression(evaluator, prueba11, prueba10);
+                default:
+                    System.out.println("Por favor, verifica que estés ingresando una opción válida.");
+                    break;
+            }
 
-        String prueba12 = "(< 5 3)";
-        testExpression(evaluator, prueba12, prueba10);
+        }
 
-        String prueba13 = "(< 2 10)";
-        testExpression(evaluator, prueba13, prueba10);
-
-        String prueba14 = "(> 5 3)";
-        testExpression(evaluator, prueba14, prueba10);
-
-        String prueba15 = "(> 2 10)";
-        testExpression(evaluator, prueba15, prueba10);
-        // Asignar el valor 15 a x antes de realizar las pruebas
-
-        String setXExpression = "(setq x 15)";
-        testExpression(evaluator, setXExpression, 15);
-
-        String prueba101 = "(> x 10)";
-        testExpression(evaluator, prueba101, prueba101);
-
-        // Expresión condicional con una cláusula que evalúa si x es mayor que 10.
-        String condExpression1 = "(cond ((> x 10) (setq x 1)) ((= x 10) (setq x 2)))";
-        testExpression(evaluator, condExpression1, 1);
-
-        String metodoSUma = "(defun sumar(a b) (+ a b))";
-        testExpression(evaluator, metodoSUma, metodoSUma);
-
-        String prueba01010 = "(sumar (2 3))";
-        testExpression(evaluator, prueba01010, prueba01010);
-
-        String factorialMethodInLisp = "(defun factorial (n) (cond ((= n 0.0) 1) (t (* n (factorial (- n 1))))))";
-        testExpression(evaluator, factorialMethodInLisp, factorialMethodInLisp);
-
-        String pruebaLLORAR = "(factorial (5))";
-        testExpression(evaluator, pruebaLLORAR, pruebaLLORAR);
-
-
+        
     }
 
-    private static void testExpression(Evaluator evaluator, String expression, Object expectedResult) {
-        System.out.println("Expresión: " + expression);
-
+    private static Object testExpression(Evaluator evaluator, String expression) {
         // Paso 1: Tokenizar la expresión
         Lexer lexer = new Lexer(expression);
         List<Object> tokens = lexer.tokenize();
@@ -116,11 +72,8 @@ public class App {
         // Paso 3: Evaluar la expresión utilizando el evaluador
         Object result = evaluator.evaluate(rootNode);
 
-        // Mostrar el resultado
-        System.out.println("Resultado de la evaluación: " + result);
-
-        System.out.println();
+        // Devolver resultado
+        return result;
+        
     }
 }
-
-
