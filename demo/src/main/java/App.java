@@ -1,6 +1,10 @@
 import java.util.*;
 
 public class App {
+    
+    /** 
+     * @param args
+     */
     public static void main(String[] args) {
 
         Evaluator evaluator = new Evaluator();
@@ -60,6 +64,12 @@ public class App {
         
     }
 
+    
+    /** 
+     * @param evaluator
+     * @param expression
+     * @return Object
+     */
     private static Object testExpression(Evaluator evaluator, String expression) {
         // Paso 1: Tokenizar la expresión
         Lexer lexer = new Lexer(expression);
